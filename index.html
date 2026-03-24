@@ -2,25 +2,682 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <title>Sensor Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Energy Wall Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5"></script>
+  <style>
+    :root {
+      --bg: #07111f;
+      --panel: rgba(12, 23, 41, 0.82);
+      --panel-border: rgba(120, 160, 255, 0.18);
+      --text: #eaf2ff;
+      --muted: #91a6c6;
+      --grid: rgba(255,255,255,0.08);
+      --blue: #4c7dff;
+      --cyan: #45d4ff;
+      --green: #33d17a;
+      --lime: #c7f464;
+      --orange: #ff9f43;
+      --red: #ff5f6d;
+      --violet: #9b6dff;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100%;
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(76,125,255,0.18), transparent 24%),
+        radial-gradient(circle at top right, rgba(69,212,255,0.12), transparent 22%),
+        radial-gradient(circle at bottom center, rgba(155,109,255,0.10), transparent 26%),
+        linear-gradient(180deg, #081120 0%, #07111f 100%);
+    }
+
+    body {
+      padding: 24px;
+    }
+
+    .shell {
+      max-width: 1880px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+      margin-bottom: 20px;
+      padding: 8px 4px 16px 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .title-block h1 {
+      margin: 0;
+      font-size: 40px;
+      line-height: 1;
+      letter-spacing: 0.02em;
+      font-weight: 800;
+    }
+
+    .title-block p {
+      margin: 10px 0 0 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .status {
+      text-align: right;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+      min-width: 280px;
+    }
+
+    .status strong {
+      color: var(--text);
+      font-size: 16px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      position: relative;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      min-height: 320px;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.03), transparent 22%),
+        radial-gradient(circle at top right, rgba(76,125,255,0.16), transparent 28%);
+      pointer-events: none;
+    }
+
+    .card-header {
+      position: relative;
+      z-index: 1;
+      padding: 18px 22px 0 22px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #7ea0ff;
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+
+    .card-title {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .card-subtitle {
+      margin: 8px 0 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .chart {
+      width: 100%;
+      height: 300px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .chart.tall {
+      height: 360px;
+    }
+
+    .loading {
+      display: grid;
+      place-items: center;
+      min-height: 70vh;
+      color: var(--muted);
+      font-size: 22px;
+    }
+
+    @media (max-width: 1500px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        min-height: 360px;
+      }
+
+      .chart,
+      .chart.tall {
+        height: 340px;
+      }
+
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .status {
+        text-align: left;
+      }
+    }
+  </style>
 </head>
 <body>
+  <div class="shell">
+    <div class="header">
+      <div class="title-block">
+        <h1>Energy Wall Dashboard</h1>
+        <p>Monitoraggio consumi e produzione energetica — vista automatica per display aziendale</p>
+      </div>
+      <div class="status">
+        <div><strong id="lastUpdate">Caricamento…</strong></div>
+        <div>Visualizzazione: 24h / 7d / 30d</div>
+      </div>
+    </div>
 
-<h1>Dashboard consumi</h1>
+    <div id="dashboard" class="grid" style="display:none;">
+      <section class="card">
+        <div class="card-header">
+          <div class="eyebrow">Bilancio energetico</div>
+          <h2 class="card-title">Totale vs Fotovoltaico (24H)</h2>
+          <p class="card-subtitle">Confronto diretto tra consumo e produzione</p>
+        </div>
+        <div id="chart-ratio-24h" class="chart"></div>
+      </section>
 
-<div id="output"></div>
+      <section class="card">
+        <div class="card-header">
+          <div class="eyebrow">Bilancio energetico</div>
+          <h2 class="card-title">Totale vs Fotovoltaico (7D)</h2>
+          <p class="card-subtitle">Vista aggregata della settimana</p>
+        </div>
+        <div id="chart-ratio-7d" class="chart"></div>
+      </section>
 
-<script>
-async function loadData() {
-  const res = await fetch('./data/day.json');
-  const data = await res.json();
+      <section class="card">
+        <div class="card-header">
+          <div class="eyebrow">Bilancio energetico</div>
+          <h2 class="card-title">Totale vs Fotovoltaico (30D)</h2>
+          <p class="card-subtitle">Vista aggregata del mese</p>
+        </div>
+        <div id="chart-ratio-30d" class="chart"></div>
+      </section>
 
-  document.getElementById('output').innerHTML =
-    '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
-}
+      <section class="card">
+        <div class="card-header">
+          <div class="eyebrow">Consumo totale</div>
+          <h2 class="card-title">Consumo Totale (24H)</h2>
+          <p class="card-subtitle">Andamento del carico complessivo</p>
+        </div>
+        <div id="chart-total-24h" class="chart tall"></div>
+      </section>
 
-loadData();
-</script>
+      <section class="card">
+        <div class="card-header">
+          <div class="eyebrow">Consumo totale</div>
+          <h2 class="card-title">Consumo Totale (7D)</h2>
+          <p class="card-subtitle">Trend settimanale del fabbisogno</p>
+        </div>
+        <div id="chart-total-7d" class="chart tall"></div>
+      </section>
 
+      <section class="card">
+        <div class="card-header">
+          <div class="eyebrow">Consumo totale</div>
+          <h2 class="card-title">Consumo Totale (30D)</h2>
+          <p class="card-subtitle">Trend mensile del fabbisogno</p>
+        </div>
+        <div id="chart-total-30d" class="chart tall"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <div class="eyebrow">Consumo parziale</div>
+          <h2 class="card-title">Consumo Parziale (24H)</h2>
+          <p class="card-subtitle">Distribuzione tra i carichi monitorati</p>
+        </div>
+        <div id="chart-partial-24h" class="chart tall"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <div class="eyebrow">Consumo parziale</div>
+          <h2 class="card-title">Consumo Parziale (7D)</h2>
+          <p class="card-subtitle">Distribuzione settimanale per sensore</p>
+        </div>
+        <div id="chart-partial-7d" class="chart tall"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <div class="eyebrow">Consumo parziale</div>
+          <h2 class="card-title">Consumo Parziale (30D)</h2>
+          <p class="card-subtitle">Distribuzione mensile per sensore</p>
+        </div>
+        <div id="chart-partial-30d" class="chart tall"></div>
+      </section>
+    </div>
+
+    <div id="loading" class="loading">Caricamento dashboard…</div>
+  </div>
+
+  <script>
+    const COLORS = {
+      total: '#4c7dff',
+      fv: '#33d17a',
+      frigo: '#ff5f6d',
+      mensa: '#ff9f43',
+      charger: '#9b6dff',
+      grid: 'rgba(255,255,255,0.08)',
+      text: '#eaf2ff',
+      muted: '#91a6c6'
+    };
+
+    async function fetchJson(path) {
+      const res = await fetch(path);
+      if (!res.ok) throw new Error(`Errore nel caricamento di ${path}`);
+      return res.json();
+    }
+
+    function buildRatioChart(el, title, data) {
+      const chart = echarts.init(document.getElementById(el));
+
+      const consumo = Number(data.totale_vs_fv.consumo || 0);
+      const fv = Number(data.totale_vs_fv.fotovoltaico || 0);
+      const balance = consumo > 0 ? Math.min((fv / consumo) * 100, 100) : 0;
+
+      chart.setOption({
+        backgroundColor: 'transparent',
+        animationDuration: 1200,
+        title: [
+          {
+            text: `${balance.toFixed(0)}%`,
+            left: 'center',
+            top: '42%',
+            textStyle: {
+              color: COLORS.text,
+              fontSize: 30,
+              fontWeight: 800
+            }
+          },
+          {
+            text: 'copertura FV',
+            left: 'center',
+            top: '56%',
+            textStyle: {
+              color: COLORS.muted,
+              fontSize: 13,
+              fontWeight: 500
+            }
+          }
+        ],
+        tooltip: {
+          trigger: 'item',
+          backgroundColor: 'rgba(7,17,31,0.96)',
+          borderWidth: 0,
+          textStyle: { color: '#fff' }
+        },
+        legend: {
+          bottom: 8,
+          left: 'center',
+          textStyle: {
+            color: COLORS.muted,
+            fontSize: 12
+          }
+        },
+        series: [
+          {
+            name: 'Consumo Totale',
+            type: 'gauge',
+            center: ['50%', '52%'],
+            radius: '82%',
+            startAngle: 220,
+            endAngle: -40,
+            min: 0,
+            max: Math.max(consumo, 1),
+            progress: {
+              show: true,
+              width: 18,
+              itemStyle: {
+                color: COLORS.total,
+                shadowBlur: 20,
+                shadowColor: 'rgba(76,125,255,0.45)'
+              }
+            },
+            pointer: { show: false },
+            axisLine: {
+              lineStyle: {
+                width: 18,
+                color: [[1, 'rgba(255,255,255,0.06)']]
+              }
+            },
+            axisTick: { show: false },
+            splitLine: { show: false },
+            axisLabel: { show: false },
+            detail: { show: false },
+            anchor: { show: false },
+            data: [{ value: consumo }]
+          },
+          {
+            name: 'Fotovoltaico',
+            type: 'gauge',
+            center: ['50%', '52%'],
+            radius: '60%',
+            startAngle: 220,
+            endAngle: -40,
+            min: 0,
+            max: Math.max(consumo, 1),
+            progress: {
+              show: true,
+              width: 16,
+              itemStyle: {
+                color: COLORS.fv,
+                shadowBlur: 20,
+                shadowColor: 'rgba(51,209,122,0.4)'
+              }
+            },
+            pointer: { show: false },
+            axisLine: {
+              lineStyle: {
+                width: 16,
+                color: [[1, 'rgba(255,255,255,0.05)']]
+              }
+            },
+            axisTick: { show: false },
+            splitLine: { show: false },
+            axisLabel: { show: false },
+            detail: { show: false },
+            anchor: { show: false },
+            data: [{ value: fv }]
+          }
+        ],
+        graphic: [
+          {
+            type: 'group',
+            left: 'center',
+            top: '74%',
+            children: [
+              {
+                type: 'text',
+                left: -78,
+                style: {
+                  text: `Totale  ${consumo.toFixed(0)} kWh`,
+                  fill: COLORS.total,
+                  font: '700 13px Inter, Arial'
+                }
+              },
+              {
+                type: 'text',
+                left: -78,
+                top: 22,
+                style: {
+                  text: `FV        ${fv.toFixed(0)} kWh`,
+                  fill: COLORS.fv,
+                  font: '700 13px Inter, Arial'
+                }
+              }
+            ]
+          }
+        ]
+      });
+
+      return chart;
+    }
+
+    function buildTotalChart(el, data, title) {
+      const chart = echarts.init(document.getElementById(el));
+      const labels = data.consumo_totale.map(x => x.label);
+      const values = data.consumo_totale.map(x => Number(x.value || 0));
+
+      chart.setOption({
+        backgroundColor: 'transparent',
+        animationDuration: 900,
+        tooltip: {
+          trigger: 'axis',
+          backgroundColor: 'rgba(7,17,31,0.96)',
+          borderWidth: 0,
+          textStyle: { color: '#fff' }
+        },
+        grid: {
+          left: 55,
+          right: 18,
+          top: 20,
+          bottom: 38
+        },
+        xAxis: {
+          type: 'category',
+          data: labels,
+          boundaryGap: false,
+          axisLabel: {
+            color: COLORS.muted,
+            fontSize: 11
+          },
+          axisLine: {
+            lineStyle: {
+              color: 'rgba(255,255,255,0.12)'
+            }
+          },
+          splitLine: {
+            show: true,
+            lineStyle: {
+              color: 'rgba(255,255,255,0.06)',
+              type: 'dashed'
+            }
+          }
+        },
+        yAxis: {
+          type: 'value',
+          axisLabel: {
+            color: COLORS.muted,
+            fontSize: 11
+          },
+          splitLine: {
+            lineStyle: {
+              color: COLORS.grid
+            }
+          }
+        },
+        series: [
+          {
+            name: title,
+            type: 'line',
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 8,
+            data: values,
+            lineStyle: {
+              width: 4,
+              color: COLORS.total
+            },
+            itemStyle: {
+              color: COLORS.cyan,
+              borderColor: COLORS.total,
+              borderWidth: 2
+            },
+            areaStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: 'rgba(76,125,255,0.55)' },
+                { offset: 1, color: 'rgba(76,125,255,0.02)' }
+              ])
+            },
+            markLine: {
+              silent: true,
+              symbol: 'none',
+              lineStyle: {
+                color: 'rgba(255,255,255,0.12)',
+                type: 'dashed'
+              },
+              data: [{ type: 'average', name: 'Media' }]
+            }
+          }
+        ]
+      });
+
+      return chart;
+    }
+
+    function buildPartialChart(el, data) {
+      const chart = echarts.init(document.getElementById(el));
+      const labels = data.consumo_parziale.labels;
+      const series = [];
+
+      const seriesMap = [
+        { key: 'Gruppo Frigo', color: COLORS.red },
+        { key: 'Mensa', color: COLORS.orange },
+        { key: 'Colonnina Auto', color: COLORS.violet }
+      ];
+
+      for (const entry of seriesMap) {
+        if (data.consumo_parziale.series[entry.key]) {
+          series.push({
+            name: entry.key,
+            type: 'line',
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 6,
+            data: data.consumo_parziale.series[entry.key].map(v => Number(v || 0)),
+            lineStyle: {
+              width: 3,
+              color: entry.color
+            },
+            itemStyle: {
+              color: entry.color,
+              borderWidth: 2
+            },
+            emphasis: {
+              focus: 'series'
+            }
+          });
+        }
+      }
+
+      chart.setOption({
+        backgroundColor: 'transparent',
+        animationDuration: 900,
+        tooltip: {
+          trigger: 'axis',
+          backgroundColor: 'rgba(7,17,31,0.96)',
+          borderWidth: 0,
+          textStyle: { color: '#fff' }
+        },
+        legend: {
+          top: 6,
+          textStyle: {
+            color: COLORS.muted,
+            fontSize: 12
+          }
+        },
+        grid: {
+          left: 55,
+          right: 18,
+          top: 50,
+          bottom: 38
+        },
+        xAxis: {
+          type: 'category',
+          data: labels,
+          boundaryGap: false,
+          axisLabel: {
+            color: COLORS.muted,
+            fontSize: 11
+          },
+          axisLine: {
+            lineStyle: {
+              color: 'rgba(255,255,255,0.12)'
+            }
+          },
+          splitLine: {
+            show: true,
+            lineStyle: {
+              color: 'rgba(255,255,255,0.04)'
+            }
+          }
+        },
+        yAxis: {
+          type: 'value',
+          axisLabel: {
+            color: COLORS.muted,
+            fontSize: 11
+          },
+          splitLine: {
+            lineStyle: {
+              color: COLORS.grid
+            }
+          }
+        },
+        series
+      });
+
+      return chart;
+    }
+
+    async function init() {
+      const [d24, d7, d30] = await Promise.all([
+        fetchJson('./data/24h.json'),
+        fetchJson('./data/7d.json'),
+        fetchJson('./data/30d.json')
+      ]);
+
+      const charts = [];
+
+      charts.push(buildRatioChart('chart-ratio-24h', '24H', d24));
+      charts.push(buildRatioChart('chart-ratio-7d', '7D', d7));
+      charts.push(buildRatioChart('chart-ratio-30d', '30D', d30));
+
+      charts.push(buildTotalChart('chart-total-24h', d24, 'Consumo Totale'));
+      charts.push(buildTotalChart('chart-total-7d', d7, 'Consumo Totale'));
+      charts.push(buildTotalChart('chart-total-30d', d30, 'Consumo Totale'));
+
+      charts.push(buildPartialChart('chart-partial-24h', d24));
+      charts.push(buildPartialChart('chart-partial-7d', d7));
+      charts.push(buildPartialChart('chart-partial-30d', d30));
+
+      const lastUpdated = [d24.updated_at, d7.updated_at, d30.updated_at]
+        .filter(Boolean)
+        .sort()
+        .slice(-1)[0];
+
+      document.getElementById('lastUpdate').textContent =
+        lastUpdated ? `Ultimo aggiornamento: ${lastUpdated}` : 'Dati aggiornati';
+
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'grid';
+
+      window.addEventListener('resize', () => {
+        charts.forEach(c => c.resize());
+      });
+    }
+
+    init().catch(err => {
+      document.getElementById('loading').textContent = 'Errore caricamento dashboard';
+      console.error(err);
+    });
+  </script>
 </body>
 </html>
