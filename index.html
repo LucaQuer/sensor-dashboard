@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Consumi giornalieri</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+      font-family: Inter, Arial, sans-serif;
+    }
+    .wrap {
+      width: 1400px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.06);
+      padding: 12px 12px 4px 12px;
+    }
+    #chart {
+      width: 100%;
+      height: 720px;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div id="chart"></div>
+    </div>
+  </div>
+
+  <script>
+    const chart = echarts.init(document.getElementById('chart'), null, { renderer: 'canvas' });
+    const option = {"backgroundColor":"#ffffff","animation":true,"title":{"text":"Consumi giornalieri","left":"center","top":10,"textStyle":{"color":"#111827","fontSize":22,"fontWeight":700}},"tooltip":{"trigger":"axis","axisPointer":{"type":"shadow"},"backgroundColor":"rgba(17,24,39,0.92)","borderWidth":0,"textStyle":{"color":"#ffffff"}},"legend":{"top":46,"textStyle":{"color":"#374151","fontSize":12}},"grid":{"left":70,"right":30,"top":90,"bottom":70},"xAxis":{"type":"category","data":["2026-03-24"],"axisLabel":{"color":"#374151","rotate":0},"axisLine":{"lineStyle":{"color":"#9ca3af"}},"axisTick":{"show":false},"splitArea":{"show":true,"areaStyle":{"color":["rgba(0,0,0,0.025)","rgba(0,0,0,0.065)"]}}},"yAxis":{"type":"value","name":"kWh","nameTextStyle":{"color":"#374151","fontWeight":"bold"},"axisLabel":{"color":"#374151"},"splitLine":{"lineStyle":{"color":"#e5e7eb"}}},"series":[{"name":"Consumo Totale","type":"bar","data":[1197],"itemStyle":{"color":"#2563eb","borderRadius":[4,4,0,0]},"label":{"show":true,"position":"top","color":"#111827","fontSize":11,"fontWeight":"bold"},"emphasis":{"focus":"series"},"barMaxWidth":36},{"name":"Fotovoltaico","type":"bar","data":[429],"itemStyle":{"color":"#16a34a","borderRadius":[4,4,0,0]},"label":{"show":true,"position":"top","color":"#111827","fontSize":11,"fontWeight":"bold"},"emphasis":{"focus":"series"},"barMaxWidth":36},{"name":"Gruppo Frigo","type":"bar","data":[332],"itemStyle":{"color":"#dc2626","borderRadius":[4,4,0,0]},"label":{"show":true,"position":"top","color":"#111827","fontSize":11,"fontWeight":"bold"},"emphasis":{"focus":"series"},"barMaxWidth":36},{"name":"Mensa","type":"bar","data":[141],"itemStyle":{"color":"#f59e0b","borderRadius":[4,4,0,0]},"label":{"show":true,"position":"top","color":"#111827","fontSize":11,"fontWeight":"bold"},"emphasis":{"focus":"series"},"barMaxWidth":36},{"name":"Colonnina Auto","type":"bar","data":[41],"itemStyle":{"color":"#7c3aed","borderRadius":[4,4,0,0]},"label":{"show":true,"position":"top","color":"#111827","fontSize":11,"fontWeight":"bold"},"emphasis":{"focus":"series"},"barMaxWidth":36}]};
+    chart.setOption(option);
+    window.addEventListener('resize', () => chart.resize());
+  </script>
+</body>
+</html>
