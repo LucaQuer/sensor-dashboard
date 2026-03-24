@@ -1,0 +1,21 @@
+{
+  "updated_at": "2026-03-24 09:30",
+  "totale_vs_fv": {
+    "consumo": 30200,
+    "fotovoltaico": 12150
+  },
+  "consumo_totale": [
+    { "label": "W1", "value": 6900 },
+    { "label": "W2", "value": 7420 },
+    { "label": "W3", "value": 7750 },
+    { "label": "W4", "value": 8130 }
+  ],
+  "consumo_parziale": {
+    "labels": ["W1", "W2", "W3", "W4"],
+    "series": {
+      "Gruppo Frigo": [1680, 1750, 1810, 1870],
+      "Mensa": [620, 710, 760, 795],
+      "Colonnina Auto": [210, 320, 430, 510]
+    }
+  }
+}
