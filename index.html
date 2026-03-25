@@ -615,12 +615,12 @@
       return chart;
     }
 
-    async function init() {
-      const results = await Promise.allSettled([
-        fetchJson('./data/24h.json'),
-        fetchJson('./data/7d.json'),
-        fetchJson('./data/30d.json')
-      ]);
+    async function fetchJson(path) {
+  const url = `${path}?t=${Date.now()}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`Errore nel caricamento di ${path}`);
+  return res.json();
+}
 
       const failed = results.filter(r => r.status === 'rejected');
       if (failed.length) {
