@@ -110,16 +110,18 @@
     }
 
     .card {
-      position: relative;
-      background: var(--panel);
-      border: 1px solid var(--panel-border);
-      border-radius: var(--card-radius);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      min-height: 0;
-    }
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  min-height: 0;
+}
 
     .card::before {
       content: '';
@@ -164,12 +166,12 @@
     }
 
     .card-body {
-      position: relative;
-      z-index: 1;
-      height: calc(100% - 68px);
-      min-height: 0;
-      padding: 0 6px 6px 6px;
-    }
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0 6px 6px 6px;
+}
 
     .chart {
       width: 100%;
