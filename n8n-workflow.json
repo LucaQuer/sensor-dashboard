@@ -1,0 +1,241 @@
+{
+  "name": "Sensor Dashboard Updater",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a1000001-0000-0000-0000-000000000001",
+      "name": "Avvia Manualmente",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [220, 380]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "hours", "hoursInterval": 1 }]
+        }
+      },
+      "id": "a1000002-0000-0000-0000-000000000002",
+      "name": "Schedule ogni ora",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [220, 520],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "INSERISCI_ID_FILE_GOOGLE_DRIVE",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "a1000003-0000-0000-0000-000000000003",
+      "name": "Google Drive - Scarica File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [460, 380],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "CREDENTIAL_GOOGLE_DRIVE",
+          "name": "Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// ─────────────────────────────────────────────────────────\n// NODO 1 — Legge il file JSON da Google Drive e lo appiattisce\n// in righe { ts, sn, energy_kwh, power_w } pronte per Sheets.\n//\n// Il file Drive è un array di payload, uno per ogni\n// invio del sensore. Ogni payload ha la struttura:\n// { hn, items: [{ li, sn, ms: [{ iName, ts, un, va }] }] }\n// ─────────────────────────────────────────────────────────\n\nconst item = $input.first();\n\n// Leggi il binario scaricato da Google Drive\nlet text;\ntry {\n  const buffer = await this.helpers.getBinaryDataBuffer(item, 'data');\n  text = buffer.toString('utf8');\n} catch (e) {\n  throw new Error('Errore lettura file Drive: ' + e.message);\n}\n\nlet rawData;\ntry {\n  rawData = JSON.parse(text);\n} catch (e) {\n  throw new Error('JSON non valido nel file sensori: ' + e.message);\n}\n\nif (!Array.isArray(rawData)) rawData = [rawData];\n\n// Campo energia per tipo di sensore (contatori cumulativi kWh)\nconst ENERGY_FIELD = {\n  TOTAL_POWER:   'Energia_Attiva_Positiva',\n  CANTEEN_POWER: 'Energia_Attiva_Positiva',\n  FV_POWER:      'Energia trifase att Positiva',\n  HEAT_POWER:    'Energia trifase att Positiva',\n  CAR_CHARGER:   'Energia trifase att Positiva'\n};\n\n// Campo potenza istantanea (W)\nconst POWER_FIELD = {\n  TOTAL_POWER:   'Potenza_attiva_trifase',\n  CANTEEN_POWER: 'Potenza_attiva_trifase',\n  FV_POWER:      'Potenza attiva trifase',\n  HEAT_POWER:    'Potenza attiva trifase',\n  CAR_CHARGER:   'Potenza attiva trifase'\n};\n\nconst records = [];\n\nfor (const payload of rawData) {\n  if (!payload || !payload.items) continue;\n  for (const device of payload.items) {\n    const sn = device.sn;\n    if (!ENERGY_FIELD[sn]) continue; // ignora sensori non mappati\n    const ms = device.ms || [];\n    const energyMs = ms.find(m => m.iName === ENERGY_FIELD[sn]);\n    const powerMs  = ms.find(m => m.iName === POWER_FIELD[sn]);\n    const ts = (energyMs || ms[0] || {}).ts || new Date().toISOString();\n    if (energyMs) {\n      records.push({\n        ts,\n        sn,\n        energy_kwh: parseFloat(energyMs.va || 0),\n        power_w:    parseFloat(powerMs?.va || 0)\n      });\n    }\n  }\n}\n\nif (records.length === 0) {\n  throw new Error('Nessun record valido trovato — controlla il formato del file sensori.');\n}\n\nreturn records.map(r => ({ json: r }));"
+      },
+      "id": "a1000004-0000-0000-0000-000000000004",
+      "name": "Parse - Estrai Misure Sensori",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 380]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "INSERISCI_ID_GOOGLE_SHEET",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "id",
+          "cachedResultName": "readings"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ts": "={{ $json.ts }}",
+            "sn": "={{ $json.sn }}",
+            "energy_kwh": "={{ $json.energy_kwh }}",
+            "power_w": "={{ $json.power_w }}"
+          },
+          "matchingColumns": ["ts", "sn"],
+          "schema": [
+            { "id": "ts",         "displayName": "ts",         "required": false, "defaultMatch": true,  "canBeUsedToMatch": true, "display": true, "type": "string", "removed": false },
+            { "id": "sn",         "displayName": "sn",         "required": false, "defaultMatch": true,  "canBeUsedToMatch": true, "display": true, "type": "string", "removed": false },
+            { "id": "energy_kwh", "displayName": "energy_kwh", "required": false, "defaultMatch": false, "canBeUsedToMatch": true, "display": true, "type": "string", "removed": false },
+            { "id": "power_w",    "displayName": "power_w",    "required": false, "defaultMatch": false, "canBeUsedToMatch": true, "display": true, "type": "string", "removed": false }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1000005-0000-0000-0000-000000000005",
+      "name": "Sheets - Upsert Readings",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [900, 380],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "CREDENTIAL_GOOGLE_SHEETS",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "documentId": {
+          "__rl": true,
+          "value": "INSERISCI_ID_GOOGLE_SHEET",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "id",
+          "cachedResultName": "readings"
+        },
+        "filtersUI": { "values": [] },
+        "options": {}
+      },
+      "id": "a1000006-0000-0000-0000-000000000006",
+      "name": "Sheets - Leggi Tutti i Readings",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [1120, 380],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "CREDENTIAL_GOOGLE_SHEETS",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// ─────────────────────────────────────────────────────────\n// NODO 2 — Legge tutti i readings dal foglio Google Sheets\n// e produce 3 item (24h.json, 7d.json, 30d.json) già\n// in formato base64, pronti per essere pushati su GitHub.\n//\n// Logica delta: i contatori sono cumulativi (kWh),\n// quindi consumo = E(t_fine) - E(t_inizio).\n// ─────────────────────────────────────────────────────────\n\nconst allItems = $input.all();\n\n// Costruisci dataset ordinato per timestamp\nconst readings = allItems\n  .map(i => ({\n    ts:         new Date(i.json.ts),\n    sn:         String(i.json.sn),\n    energy_kwh: parseFloat(i.json.energy_kwh || 0),\n    power_w:    parseFloat(i.json.power_w || 0)\n  }))\n  .filter(r => !isNaN(r.ts.getTime()) && r.energy_kwh >= 0)\n  .sort((a, b) => a.ts - b.ts);\n\nif (readings.length === 0) {\n  throw new Error('Nessun reading valido in Google Sheets. Esegui prima almeno un ciclo di raccolta dati.');\n}\n\nconst now = new Date();\n\n// Ultima lettura disponibile <= beforeTs per un dato sensore\nfunction latestBefore(sn, beforeTs) {\n  const recs = readings.filter(r => r.sn === sn && r.ts <= beforeTs);\n  return recs.length ? recs[recs.length - 1] : null;\n}\n\n// Delta kWh tra due istanti (0 se dati insufficienti)\nfunction deltaKwh(sn, fromTs, toTs) {\n  const start = latestBefore(sn, fromTs);\n  const end   = latestBefore(sn, toTs);\n  if (!start || !end || end.energy_kwh < start.energy_kwh) return 0;\n  return Math.round(end.energy_kwh - start.energy_kwh);\n}\n\n// ════════════════════════════════════════\n// 24H — fasce da 4 ore\n// ════════════════════════════════════════\nconst h24ago = new Date(now.getTime() - 24 * 3600 * 1000);\nconst slots24 = [];\nfor (let h = 0; h < 24; h += 4) {\n  const s = new Date(h24ago.getTime() + h * 3600 * 1000);\n  const e = new Date(s.getTime() + 4 * 3600 * 1000);\n  slots24.push({ label: String(s.getHours()).padStart(2, '0'), s, e });\n}\n\nconst d24 = {\n  updated_at: now.toISOString().slice(0, 16).replace('T', ' '),\n  totale_vs_fv: {\n    consumo:      deltaKwh('TOTAL_POWER', h24ago, now),\n    fotovoltaico: deltaKwh('FV_POWER',    h24ago, now)\n  },\n  consumo_totale: slots24.map(sl => ({\n    label: sl.label,\n    value: deltaKwh('TOTAL_POWER', sl.s, sl.e)\n  })),\n  consumo_parziale: {\n    labels: slots24.map(sl => sl.label),\n    series: {\n      'Gruppo Frigo':   slots24.map(sl => deltaKwh('HEAT_POWER',    sl.s, sl.e)),\n      'Mensa':          slots24.map(sl => deltaKwh('CANTEEN_POWER', sl.s, sl.e)),\n      'Colonnina Auto': slots24.map(sl => deltaKwh('CAR_CHARGER',   sl.s, sl.e))\n    }\n  }\n};\n\n// ════════════════════════════════════════\n// 7D — un punto per ogni giorno\n// ════════════════════════════════════════\nconst d7ago = new Date(now.getTime() - 7 * 24 * 3600 * 1000);\nconst DAY_IT = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];\nconst days7 = [];\nfor (let d = 6; d >= 0; d--) {\n  const dayStart = new Date(now);\n  dayStart.setHours(0, 0, 0, 0);\n  dayStart.setDate(dayStart.getDate() - d);\n  const dayEnd = new Date(dayStart.getTime() + 24 * 3600 * 1000);\n  days7.push({ label: DAY_IT[dayStart.getDay()], s: dayStart, e: dayEnd });\n}\n\nconst d7 = {\n  updated_at: now.toISOString().slice(0, 16).replace('T', ' '),\n  totale_vs_fv: {\n    consumo:      deltaKwh('TOTAL_POWER', d7ago, now),\n    fotovoltaico: deltaKwh('FV_POWER',    d7ago, now)\n  },\n  consumo_totale: days7.map(sl => ({\n    label: sl.label,\n    value: deltaKwh('TOTAL_POWER', sl.s, sl.e)\n  })),\n  consumo_parziale: {\n    labels: days7.map(sl => sl.label),\n    series: {\n      'Gruppo Frigo':   days7.map(sl => deltaKwh('HEAT_POWER',    sl.s, sl.e)),\n      'Mensa':          days7.map(sl => deltaKwh('CANTEEN_POWER', sl.s, sl.e)),\n      'Colonnina Auto': days7.map(sl => deltaKwh('CAR_CHARGER',   sl.s, sl.e))\n    }\n  }\n};\n\n// ════════════════════════════════════════\n// 30D — un punto per ogni settimana\n// ════════════════════════════════════════\nconst d30ago = new Date(now.getTime() - 30 * 24 * 3600 * 1000);\nconst weeks = [];\nfor (let w = 0; w < 4; w++) {\n  const wStart = new Date(d30ago.getTime() + w * 7 * 24 * 3600 * 1000);\n  const wEnd   = new Date(wStart.getTime() + 7 * 24 * 3600 * 1000);\n  weeks.push({ label: `W${w + 1}`, s: wStart, e: wEnd });\n}\n\nconst d30 = {\n  updated_at: now.toISOString().slice(0, 16).replace('T', ' '),\n  totale_vs_fv: {\n    consumo:      deltaKwh('TOTAL_POWER', d30ago, now),\n    fotovoltaico: deltaKwh('FV_POWER',    d30ago, now)\n  },\n  consumo_totale: weeks.map(sl => ({\n    label: sl.label,\n    value: deltaKwh('TOTAL_POWER', sl.s, sl.e)\n  })),\n  consumo_parziale: {\n    labels: weeks.map(sl => sl.label),\n    series: {\n      'Gruppo Frigo':   weeks.map(sl => deltaKwh('HEAT_POWER',    sl.s, sl.e)),\n      'Mensa':          weeks.map(sl => deltaKwh('CANTEEN_POWER', sl.s, sl.e)),\n      'Colonnina Auto': weeks.map(sl => deltaKwh('CAR_CHARGER',   sl.s, sl.e))\n    }\n  }\n};\n\n// Output: 3 item, uno per ogni file da aggiornare su GitHub\nconst b64 = obj => Buffer.from(JSON.stringify(obj, null, 2)).toString('base64');\nreturn [\n  { json: { filename: 'data/24h.json', base64Content: b64(d24) } },\n  { json: { filename: 'data/7d.json',  base64Content: b64(d7)  } },\n  { json: { filename: 'data/30d.json', base64Content: b64(d30) } }\n];"
+      },
+      "id": "a1000007-0000-0000-0000-000000000007",
+      "name": "Build - Costruisci JSON Dashboard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 380]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.github.com/repos/LucaQuer/sensor-dashboard/contents/{{ $json.filename }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept",              "value": "application/vnd.github+json" },
+            { "name": "X-GitHub-Api-Version","value": "2022-11-28" }
+          ]
+        },
+        "options": {
+          "lowercaseHeaders": false
+        }
+      },
+      "id": "a1000008-0000-0000-0000-000000000008",
+      "name": "GitHub - GET SHA File",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 380],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CREDENTIAL_GITHUB_PAT",
+          "name": "GitHub PAT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://api.github.com/repos/LucaQuer/sensor-dashboard/contents/{{ $('Build - Costruisci JSON Dashboard').item.json.filename }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"message\": \"chore: aggiornamento dati dashboard\",\n  \"content\": \"{{ $('Build - Costruisci JSON Dashboard').item.json.base64Content }}\",\n  \"sha\": \"{{ $json.sha }}\"\n}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept",              "value": "application/vnd.github+json" },
+            { "name": "X-GitHub-Api-Version","value": "2022-11-28" }
+          ]
+        },
+        "options": {
+          "lowercaseHeaders": false
+        }
+      },
+      "id": "a1000009-0000-0000-0000-000000000009",
+      "name": "GitHub - PUT Aggiorna File",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 380],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CREDENTIAL_GITHUB_PAT",
+          "name": "GitHub PAT"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Avvia Manualmente": {
+      "main": [[{ "node": "Google Drive - Scarica File", "type": "main", "index": 0 }]]
+    },
+    "Schedule ogni ora": {
+      "main": [[{ "node": "Google Drive - Scarica File", "type": "main", "index": 0 }]]
+    },
+    "Google Drive - Scarica File": {
+      "main": [[{ "node": "Parse - Estrai Misure Sensori", "type": "main", "index": 0 }]]
+    },
+    "Parse - Estrai Misure Sensori": {
+      "main": [[{ "node": "Sheets - Upsert Readings", "type": "main", "index": 0 }]]
+    },
+    "Sheets - Upsert Readings": {
+      "main": [[{ "node": "Sheets - Leggi Tutti i Readings", "type": "main", "index": 0 }]]
+    },
+    "Sheets - Leggi Tutti i Readings": {
+      "main": [[{ "node": "Build - Costruisci JSON Dashboard", "type": "main", "index": 0 }]]
+    },
+    "Build - Costruisci JSON Dashboard": {
+      "main": [[{ "node": "GitHub - GET SHA File", "type": "main", "index": 0 }]]
+    },
+    "GitHub - GET SHA File": {
+      "main": [[{ "node": "GitHub - PUT Aggiorna File", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": ""
+  },
+  "id": "sensor-dashboard-v1",
+  "tags": []
+}
