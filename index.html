@@ -202,7 +202,7 @@
         <div class="card-header">
           <div class="eyebrow">Bilancio energetico</div>
           <h2 class="card-title">Totale vs Fotovoltaico (24H)</h2>
-          <p class="card-subtitle">Vista aggregata del giorno</p>
+          <p class="card-subtitle">Confronto diretto tra consumo e produzione</p>
         </div>
         <div class="card-body">
           <div id="chart-ratio-24h" class="chart"></div>
@@ -235,7 +235,7 @@
         <div class="card-header">
           <div class="eyebrow">Consumo totale</div>
           <h2 class="card-title">Consumo Totale (24H)</h2>
-          <p class="card-subtitle">Andamento del carico complessivo giornaliero</p>
+          <p class="card-subtitle">Andamento del carico complessivo</p>
         </div>
         <div class="card-body">
           <div id="chart-total-24h" class="chart"></div>
@@ -246,7 +246,7 @@
         <div class="card-header">
           <div class="eyebrow">Consumo totale</div>
           <h2 class="card-title">Consumo Totale (7D)</h2>
-          <p class="card-subtitle">Andamento del carico complessivo settimanale</p>
+          <p class="card-subtitle">Trend settimanale del fabbisogno</p>
         </div>
         <div class="card-body">
           <div id="chart-total-7d" class="chart"></div>
@@ -257,7 +257,7 @@
         <div class="card-header">
           <div class="eyebrow">Consumo totale</div>
           <h2 class="card-title">Consumo Totale (30D)</h2>
-          <p class="card-subtitle">Andamento del carico complessivo mensile</p>
+          <p class="card-subtitle">Trend mensile del fabbisogno</p>
         </div>
         <div class="card-body">
           <div id="chart-total-30d" class="chart"></div>
@@ -268,7 +268,7 @@
         <div class="card-header">
           <div class="eyebrow">Consumo parziale</div>
           <h2 class="card-title">Consumo Parziale (24H)</h2>
-          <p class="card-subtitle">Distribuzione giornaliera per sensore</p>
+          <p class="card-subtitle">Distribuzione tra i carichi monitorati</p>
         </div>
         <div class="card-body">
           <div id="chart-partial-24h" class="chart"></div>
@@ -363,6 +363,26 @@
               fontSize: 14,
               fontWeight: 500
             }
+          },
+          {
+            text: `Totale ${consumo.toFixed(0)} kWh`,
+            left: 'center',
+            top: '72%',
+            textStyle: {
+              color: COLORS.total,
+              fontSize: 13,
+              fontWeight: 700
+            }
+          },
+          {
+            text: `FV ${fv.toFixed(0)} kWh`,
+            left: 'center',
+            top: '79%',
+            textStyle: {
+              color: COLORS.fv,
+              fontSize: 13,
+              fontWeight: 700
+            }
           }
         ],
         tooltip: {
@@ -435,34 +455,6 @@
             detail: { show: false },
             anchor: { show: false },
             data: [{ value: fv }]
-          }
-        ],
-        graphic: [
-          {
-            type: 'group',
-            left: 'center',
-            top: '78%',
-            children: [
-              {
-                type: 'text',
-                left: -75,
-                style: {
-                  text: `Totale  ${consumo.toFixed(0)} kWh`,
-                  fill: COLORS.total,
-                  font: '700 13px Inter, Arial'
-                }
-              },
-              {
-                type: 'text',
-                left: -75,
-                top: 24,
-                style: {
-                  text: `FV        ${fv.toFixed(0)} kWh`,
-                  fill: COLORS.fv,
-                  font: '700 13px Inter, Arial'
-                }
-              }
-            ]
           }
         ]
       });
