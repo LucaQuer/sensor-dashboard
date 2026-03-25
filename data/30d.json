@@ -1,8 +1,8 @@
 {
-  "updated_at": "2026-03-25 19:42",
+  "updated_at": "2026-03-25 21:20",
   "totale_vs_fv": {
-    "consumo": 8250,
-    "fotovoltaico": 10635
+    "consumo": 0,
+    "fotovoltaico": 0
   },
   "consumo_totale": [
     {
@@ -19,7 +19,7 @@
     },
     {
       "label": "W4",
-      "value": 8250
+      "value": 0
     }
   ],
   "consumo_parziale": {
@@ -32,15 +32,15 @@
     "series": {
       "Gruppo Frigo": [
         0,
-        1960,
-        2167,
-        1939
+        0,
+        0,
+        0
       ],
       "Mensa": [
         0,
         0,
-        965,
-        996
+        0,
+        0
       ],
       "Colonnina Auto": [
         0,
