@@ -343,48 +343,16 @@
       chart.setOption({
         backgroundColor: 'transparent',
         animationDuration: 1200,
-        title: [
-          {
-            text: `${balance.toFixed(0)}%`,
-            left: 'center',
-            top: '42%',
-            textStyle: {
-              color: COLORS.text,
-              fontSize: 36,
-              fontWeight: 800
-            }
-          },
-          {
-            text: 'copertura FV',
-            left: 'center',
-            top: '58%',
-            textStyle: {
-              color: COLORS.muted,
-              fontSize: 14,
-              fontWeight: 500
-            }
-          },
-          {
-            text: `Totale ${consumo.toFixed(0)} kWh`,
-            left: 'center',
-            top: '72%',
-            textStyle: {
-              color: COLORS.total,
-              fontSize: 13,
-              fontWeight: 700
-            }
-          },
-          {
-            text: `FV ${fv.toFixed(0)} kWh`,
-            left: 'center',
-            top: '79%',
-            textStyle: {
-              color: COLORS.fv,
-              fontSize: 13,
-              fontWeight: 700
-            }
+        title: {
+          text: `${balance.toFixed(0)}%`,
+          left: 'center',
+          top: '46%',
+          textStyle: {
+            color: COLORS.text,
+            fontSize: 48,
+            fontWeight: 900
           }
-        ],
+        },
         tooltip: {
           trigger: 'item',
           backgroundColor: 'rgba(7,17,31,0.96)',
@@ -396,7 +364,7 @@
             name: 'Consumo Totale',
             type: 'gauge',
             center: ['50%', '50%'],
-            radius: '82%',
+            radius: '78%',
             startAngle: 220,
             endAngle: -40,
             min: 0,
@@ -428,7 +396,7 @@
             name: 'Fotovoltaico',
             type: 'gauge',
             center: ['50%', '50%'],
-            radius: '60%',
+            radius: '56%',
             startAngle: 220,
             endAngle: -40,
             min: 0,
