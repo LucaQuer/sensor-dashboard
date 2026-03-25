@@ -675,6 +675,9 @@
       document.getElementById('loading').textContent = 'Errore caricamento dashboard';
       console.error(err);
     });
+
+    // Auto-reload ogni 5 minuti per aggiornare i dati dal server
+    setTimeout(() => location.reload(), 5 * 60 * 1000);
   </script>
 </body>
 </html>
