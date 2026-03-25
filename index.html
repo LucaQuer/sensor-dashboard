@@ -8,18 +8,19 @@
   <style>
     :root {
       --bg: #07111f;
-      --panel: rgba(12, 23, 41, 0.82);
-      --panel-border: rgba(120, 160, 255, 0.18);
-      --text: #eaf2ff;
-      --muted: #91a6c6;
-      --grid: rgba(255,255,255,0.08);
+      --panel: rgba(11, 24, 43, 0.9);
+      --panel-border: rgba(141, 179, 255, 0.28);
+      --text: #f4f8ff;
+      --muted: #b2c3de;
+      --grid: rgba(255,255,255,0.14);
       --blue: #4c7dff;
       --cyan: #45d4ff;
       --green: #33d17a;
       --orange: #ff9f43;
       --red: #ff5f6d;
       --violet: #9b6dff;
-      --shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+      --shadow: 0 12px 28px rgba(0, 0, 0, 0.26);
+      --card-radius: 16px;
     }
 
     * {
@@ -48,12 +49,15 @@
     }
 
     .shell {
-      width: 1920px;
-      height: 1080px;
+      width: 100vw;
+      height: 100vh;
+      max-width: 1920px;
+      max-height: 1080px;
       padding: 18px 18px 14px 18px;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      gap: 10px;
     }
 
     .header {
@@ -69,29 +73,68 @@
 
     .title-block h1 {
       margin: 0;
-      font-size: 28px;
+      font-size: clamp(30px, 2vw, 38px);
       line-height: 1;
       letter-spacing: 0.02em;
-      font-weight: 800;
+      font-weight: 900;
     }
 
     .title-block p {
       margin: 8px 0 0 0;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 17px;
+      font-weight: 500;
     }
 
     .status {
       text-align: right;
       color: var(--muted);
-      font-size: 12px;
-      line-height: 1.35;
-      min-width: 250px;
+      font-size: 14px;
+      line-height: 1.45;
+      min-width: 300px;
+      font-weight: 600;
     }
 
     .status strong {
       color: var(--text);
-      font-size: 14px;
+      font-size: 18px;
+    }
+
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      flex: 0 0 auto;
+    }
+
+    .kpi {
+      background: linear-gradient(160deg, rgba(17, 39, 71, 0.95), rgba(11, 26, 49, 0.9));
+      border: 1px solid var(--panel-border);
+      border-radius: var(--card-radius);
+      padding: 12px 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+
+    .kpi-value {
+      font-size: clamp(24px, 1.8vw, 34px);
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .kpi-note {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
     }
 
     .grid {
@@ -107,7 +150,7 @@
       position: relative;
       background: var(--panel);
       border: 1px solid var(--panel-border);
-      border-radius: 18px;
+      border-radius: var(--card-radius);
       box-shadow: var(--shadow);
       overflow: hidden;
       backdrop-filter: blur(10px);
@@ -134,7 +177,7 @@
 
     .eyebrow {
       display: inline-block;
-      font-size: 9px;
+      font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 0.12em;
       color: #7ea0ff;
@@ -144,7 +187,7 @@
 
     .card-title {
       margin: 0;
-      font-size: 15px;
+      font-size: 17px;
       font-weight: 800;
       color: var(--text);
       line-height: 1.15;
@@ -153,7 +196,7 @@
     .card-subtitle {
       margin: 5px 0 0 0;
       color: var(--muted);
-      font-size: 10px;
+      font-size: 12px;
       line-height: 1.25;
     }
 
@@ -189,6 +232,30 @@
       <div class="status">
         <div><strong id="lastUpdate">Caricamento…</strong></div>
       </div>
+    </div>
+
+
+    <div id="kpiStrip" class="kpi-strip" style="display:none;">
+      <article class="kpi">
+        <div class="kpi-label">Consumo totale (24H)</div>
+        <div class="kpi-value" id="kpiTotal">--</div>
+        <div class="kpi-note">Energia assorbita da tutti i carichi</div>
+      </article>
+      <article class="kpi">
+        <div class="kpi-label">Produzione FV (24H)</div>
+        <div class="kpi-value" id="kpiFv">--</div>
+        <div class="kpi-note">Energia prodotta da fotovoltaico</div>
+      </article>
+      <article class="kpi">
+        <div class="kpi-label">Copertura FV (24H)</div>
+        <div class="kpi-value" id="kpiCoverage">--</div>
+        <div class="kpi-note">Quota del consumo coperta da FV</div>
+      </article>
+      <article class="kpi">
+        <div class="kpi-label">Consumo netto da rete</div>
+        <div class="kpi-value" id="kpiGrid">--</div>
+        <div class="kpi-note">Consumo totale meno produzione FV</div>
+      </article>
     </div>
 
     <div id="dashboard" class="grid" style="display:none;">
@@ -316,6 +383,37 @@
       return res.json();
     }
 
+    const KWH_FORMATTER = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 0 });
+
+    function formatKwh(value) {
+      return `${KWH_FORMATTER.format(Number(value || 0))} kWh`;
+    }
+
+    function formatTimestamp(value) {
+      if (!value) return null;
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      return date.toLocaleString('it-IT', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function updateKpis(data) {
+      const consumo = Number(data?.totale_vs_fv?.consumo || 0);
+      const fv = Number(data?.totale_vs_fv?.fotovoltaico || 0);
+      const coverage = consumo > 0 ? Math.min((fv / consumo) * 100, 100) : 0;
+      const grid = Math.max(consumo - fv, 0);
+
+      document.getElementById('kpiTotal').textContent = formatKwh(consumo);
+      document.getElementById('kpiFv').textContent = formatKwh(fv);
+      document.getElementById('kpiCoverage').textContent = `${coverage.toFixed(0)}%`;
+      document.getElementById('kpiGrid').textContent = formatKwh(grid);
+    }
+
     function buildRatioChart(el, data) {
       const chart = echarts.init(document.getElementById(el));
 
@@ -359,7 +457,7 @@
           left: 'center',
           textStyle: {
             color: COLORS.muted,
-            fontSize: 12
+            fontSize: 13
           }
         },
         series: [
@@ -487,7 +585,8 @@
           boundaryGap: false,
           axisLabel: {
             color: COLORS.muted,
-            fontSize: 11
+            fontSize: 13,
+            hideOverlap: true
           },
           axisLine: {
             lineStyle: {
@@ -506,7 +605,8 @@
           type: 'value',
           axisLabel: {
             color: COLORS.muted,
-            fontSize: 11
+            fontSize: 13,
+            hideOverlap: true
           },
           splitLine: {
             lineStyle: {
@@ -520,7 +620,7 @@
             type: 'line',
             smooth: true,
             symbol: 'circle',
-            symbolSize: 8,
+            symbolSize: 9,
             data: values,
             lineStyle: {
               width: 4,
@@ -601,7 +701,7 @@
           top: 6,
           textStyle: {
             color: COLORS.muted,
-            fontSize: 12
+            fontSize: 13
           }
         },
         grid: {
@@ -616,7 +716,7 @@
           boundaryGap: false,
           axisLabel: {
             color: COLORS.muted,
-            fontSize: 11
+            fontSize: 13
           },
           axisLine: {
             lineStyle: {
@@ -634,7 +734,7 @@
           type: 'value',
           axisLabel: {
             color: COLORS.muted,
-            fontSize: 11
+            fontSize: 13
           },
           splitLine: {
             lineStyle: {
@@ -649,21 +749,32 @@
     }
 
     async function init() {
-      const [d24, d7, d30] = await Promise.all([
+      const results = await Promise.allSettled([
         fetchJson('./data/24h.json'),
         fetchJson('./data/7d.json'),
         fetchJson('./data/30d.json')
       ]);
+
+      const failed = results.filter(r => r.status === 'rejected');
+      if (failed.length) {
+        throw new Error(`Caricamento dati incompleto (${failed.length}/3 file mancanti o non validi)`);
+      }
+
+      const [d24, d7, d30] = results.map(r => r.value);
 
       const lastUpdated = [d24.updated_at, d7.updated_at, d30.updated_at]
         .filter(Boolean)
         .sort()
         .slice(-1)[0];
 
+      const formattedUpdate = formatTimestamp(lastUpdated);
       document.getElementById('lastUpdate').textContent =
-        lastUpdated ? `Ultimo aggiornamento: ${lastUpdated}` : 'Dati aggiornati';
+        formattedUpdate ? `Ultimo aggiornamento: ${formattedUpdate}` : 'Dati aggiornati';
+
+      updateKpis(d24);
 
       document.getElementById('loading').style.display = 'none';
+      document.getElementById('kpiStrip').style.display = 'grid';
       document.getElementById('dashboard').style.display = 'grid';
 
       const charts = [];
