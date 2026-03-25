@@ -1,24 +1,69 @@
 {
-  "updated_at": "2026-03-24 09:30",
+  "updated_at": "2026-03-25 16:30",
   "totale_vs_fv": {
-    "consumo": 7120,
-    "fotovoltaico": 2850
+    "consumo": 0,
+    "fotovoltaico": 0
   },
   "consumo_totale": [
-    { "label": "Lun", "value": 920 },
-    { "label": "Mar", "value": 1080 },
-    { "label": "Mer", "value": 990 },
-    { "label": "Gio", "value": 1180 },
-    { "label": "Ven", "value": 1250 },
-    { "label": "Sab", "value": 860 },
-    { "label": "Dom", "value": 840 }
+    {
+      "label": "16",
+      "value": 0
+    },
+    {
+      "label": "20",
+      "value": 0
+    },
+    {
+      "label": "00",
+      "value": 0
+    },
+    {
+      "label": "04",
+      "value": 0
+    },
+    {
+      "label": "08",
+      "value": 0
+    },
+    {
+      "label": "12",
+      "value": 0
+    }
   ],
   "consumo_parziale": {
-    "labels": ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"],
+    "labels": [
+      "16",
+      "20",
+      "00",
+      "04",
+      "08",
+      "12"
+    ],
     "series": {
-      "Gruppo Frigo": [250, 255, 248, 270, 275, 240, 235],
-      "Mensa": [90, 110, 105, 120, 130, 60, 40],
-      "Colonnina Auto": [30, 50, 42, 70, 88, 55, 35]
+      "Gruppo Frigo": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "Mensa": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "Colonnina Auto": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
     }
   }
 }
