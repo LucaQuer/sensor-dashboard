@@ -110,18 +110,18 @@
     }
 
     .card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  background: var(--panel);
-  border: 1px solid var(--panel-border);
-  border-radius: var(--card-radius);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  min-height: 0;
-}
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--card-radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      min-height: 0;
+    }
 
     .card::before {
       content: '';
@@ -157,12 +157,12 @@
     }
 
     .card-body {
-  position: relative;
-  z-index: 1;
-  flex: 1 1 auto;
-  min-height: 0;
-  padding: 0 6px 6px 6px;
-}
+      position: relative;
+      z-index: 1;
+      flex: 1 1 auto;
+      min-height: 0;
+      padding: 0 6px 6px 6px;
+    }
 
     .chart {
       width: 100%;
@@ -189,13 +189,11 @@
         <div><strong id="lastUpdate">Caricamento…</strong></div>
       </div>
     </div>
-    <div id="dashboard" class="grid" style="display:none;">
 
+    <div id="dashboard" class="grid" style="display:none;">
       <section class="card">
         <div class="card-header">
-          <div class="eyebrow">Bilancio energetico</div>
           <h2 class="card-title">Totale vs Fotovoltaico (24H)</h2>
-          <p class="card-subtitle">Confronto diretto tra consumo e produzione</p>
         </div>
         <div class="card-body">
           <div id="chart-ratio-24h" class="chart"></div>
@@ -204,9 +202,7 @@
 
       <section class="card">
         <div class="card-header">
-          <div class="eyebrow">Bilancio energetico</div>
           <h2 class="card-title">Totale vs Fotovoltaico (7D)</h2>
-          <p class="card-subtitle">Vista aggregata della settimana</p>
         </div>
         <div class="card-body">
           <div id="chart-ratio-7d" class="chart"></div>
@@ -215,9 +211,7 @@
 
       <section class="card">
         <div class="card-header">
-          <div class="eyebrow">Bilancio energetico</div>
           <h2 class="card-title">Totale vs Fotovoltaico (30D)</h2>
-          <p class="card-subtitle">Vista aggregata del mese</p>
         </div>
         <div class="card-body">
           <div id="chart-ratio-30d" class="chart"></div>
@@ -226,9 +220,7 @@
 
       <section class="card">
         <div class="card-header">
-          <div class="eyebrow">Consumo totale</div>
           <h2 class="card-title">Consumo Totale (24H)</h2>
-          <p class="card-subtitle">Andamento del carico complessivo</p>
         </div>
         <div class="card-body">
           <div id="chart-total-24h" class="chart"></div>
@@ -237,9 +229,7 @@
 
       <section class="card">
         <div class="card-header">
-          <div class="eyebrow">Consumo totale</div>
           <h2 class="card-title">Consumo Totale (7D)</h2>
-          <p class="card-subtitle">Trend settimanale del fabbisogno</p>
         </div>
         <div class="card-body">
           <div id="chart-total-7d" class="chart"></div>
@@ -248,9 +238,7 @@
 
       <section class="card">
         <div class="card-header">
-          <div class="eyebrow">Consumo totale</div>
           <h2 class="card-title">Consumo Totale (30D)</h2>
-          <p class="card-subtitle">Trend mensile del fabbisogno</p>
         </div>
         <div class="card-body">
           <div id="chart-total-30d" class="chart"></div>
@@ -259,9 +247,7 @@
 
       <section class="card">
         <div class="card-header">
-          <div class="eyebrow">Consumo parziale</div>
           <h2 class="card-title">Consumo Parziale (24H)</h2>
-          <p class="card-subtitle">Distribuzione tra i carichi monitorati</p>
         </div>
         <div class="card-body">
           <div id="chart-partial-24h" class="chart"></div>
@@ -270,9 +256,7 @@
 
       <section class="card">
         <div class="card-header">
-          <div class="eyebrow">Consumo parziale</div>
           <h2 class="card-title">Consumo Parziale (7D)</h2>
-          <p class="card-subtitle">Distribuzione settimanale per sensore</p>
         </div>
         <div class="card-body">
           <div id="chart-partial-7d" class="chart"></div>
@@ -281,15 +265,12 @@
 
       <section class="card">
         <div class="card-header">
-          <div class="eyebrow">Consumo parziale</div>
           <h2 class="card-title">Consumo Parziale (30D)</h2>
-          <p class="card-subtitle">Distribuzione mensile per sensore</p>
         </div>
         <div class="card-body">
           <div id="chart-partial-30d" class="chart"></div>
         </div>
       </section>
-
     </div>
 
     <div id="loading" class="loading">Caricamento dashboard…</div>
@@ -299,25 +280,37 @@
     const COLORS = {
       total: '#4c7dff',
       fv: '#33d17a',
-      frigo: '#ff5f6d',
-      mensa: '#ff9f43',
-      charger: '#9b6dff',
+      frigo: '#4c7dff',
+      mensa: '#33d17a',
+      charger: '#f6c344',
       cyan: '#45d4ff',
       grid: 'rgba(255,255,255,0.08)',
       text: '#eaf2ff',
       muted: '#91a6c6'
     };
 
+    const CACHE_BUSTER = Date.now();
+
     async function fetchJson(path) {
-      const res = await fetch(path);
-      if (!res.ok) throw new Error(`Errore nel caricamento di ${path}`);
+      const separator = path.includes('?') ? '&' : '?';
+      const url = `${path}${separator}v=${CACHE_BUSTER}`;
+      const res = await fetch(url, { cache: 'no-store' });
+
+      if (!res.ok) {
+        throw new Error(`Errore nel caricamento di ${path} (${res.status})`);
+      }
+
       return res.json();
     }
 
     function formatTimestamp(value) {
       if (!value) return null;
-      const date = new Date(value);
+
+      const normalized = String(value).replace(' ', 'T');
+      const date = new Date(normalized);
+
       if (Number.isNaN(date.getTime())) return value;
+
       return date.toLocaleString('it-IT', {
         day: '2-digit',
         month: '2-digit',
@@ -326,11 +319,12 @@
         minute: '2-digit'
       });
     }
+
     function buildRatioChart(el, data) {
       const chart = echarts.init(document.getElementById(el));
 
-      const consumo = Number(data.totale_vs_fv.consumo || 0);
-      const fv = Number(data.totale_vs_fv.fotovoltaico || 0);
+      const consumo = Number(data?.totale_vs_fv?.consumo || 0);
+      const fv = Number(data?.totale_vs_fv?.fotovoltaico || 0);
       const balance = consumo > 0 ? Math.min((fv / consumo) * 100, 100) : 0;
 
       chart.setOption({
@@ -425,8 +419,8 @@
 
     function buildTotalChart(el, data, title) {
       const chart = echarts.init(document.getElementById(el));
-      const labels = data.consumo_totale.map(x => x.label);
-      const values = data.consumo_totale.map(x => Number(x.value || 0));
+      const labels = (data?.consumo_totale || []).map(x => x.label);
+      const values = (data?.consumo_totale || []).map(x => Number(x.value || 0));
 
       chart.setOption({
         backgroundColor: 'transparent',
@@ -520,24 +514,25 @@
 
     function buildPartialChart(el, data) {
       const chart = echarts.init(document.getElementById(el));
-      const labels = data.consumo_parziale.labels;
+      const labels = data?.consumo_parziale?.labels || [];
+      const seriesData = data?.consumo_parziale?.series || {};
       const series = [];
 
       const seriesMap = [
-        { key: 'Gruppo Frigo', color: COLORS.total },
-        { key: 'Mensa', color: COLORS.fv },
-        { key: 'Colonnina Auto', color: '#f6c344' }
+        { key: 'Gruppo Frigo', color: COLORS.frigo },
+        { key: 'Mensa', color: COLORS.mensa },
+        { key: 'Colonnina Auto', color: COLORS.charger }
       ];
 
       for (const entry of seriesMap) {
-        if (data.consumo_parziale.series[entry.key]) {
+        if (seriesData[entry.key]) {
           series.push({
             name: entry.key,
             type: 'line',
             smooth: true,
             symbol: 'circle',
             symbolSize: 5,
-            data: data.consumo_parziale.series[entry.key].map(v => Number(v || 0)),
+            data: seriesData[entry.key].map(v => Number(v || 0)),
             lineStyle: {
               width: 3,
               color: entry.color
@@ -615,12 +610,12 @@
       return chart;
     }
 
-    async function fetchJson(path) {
-  const url = `${path}?t=${Date.now()}`;
-  const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`Errore nel caricamento di ${path}`);
-  return res.json();
-}
+    async function init() {
+      const results = await Promise.allSettled([
+        fetchJson('./data/24h.json'),
+        fetchJson('./data/7d.json'),
+        fetchJson('./data/30d.json')
+      ]);
 
       const failed = results.filter(r => r.status === 'rejected');
       if (failed.length) {
@@ -637,7 +632,6 @@
       const formattedUpdate = formatTimestamp(lastUpdated);
       document.getElementById('lastUpdate').textContent =
         formattedUpdate ? `Ultimo aggiornamento: ${formattedUpdate}` : 'Dati aggiornati';
-
 
       document.getElementById('loading').style.display = 'none';
       document.getElementById('dashboard').style.display = 'grid';
@@ -659,17 +653,18 @@
         charts.forEach(c => c.resize());
       });
 
-      window.addEventListener('resize', () => {
+      const resizeHandler = () => {
         charts.forEach(c => c.resize());
-      });
+      };
+
+      window.addEventListener('resize', resizeHandler);
     }
 
     init().catch(err => {
-      document.getElementById('loading').textContent = 'Errore caricamento dashboard';
+      document.getElementById('loading').textContent = `Errore caricamento dashboard: ${err.message}`;
       console.error(err);
     });
 
-    // Auto-reload ogni 5 minuti per aggiornare i dati dal server
     setTimeout(() => location.reload(), 5 * 60 * 1000);
   </script>
 </body>
